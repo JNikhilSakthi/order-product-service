@@ -33,8 +33,13 @@ spring:
 
   jackson:
     default-property-inclusion: non_null
-    serialization:
-      write-dates-as-timestamps: false
+    # write-dates-as-timestamps moved from spring.jackson.serialization.* to
+    # spring.jackson.datatype.datetime.* in Jackson 3 / Spring Boot 4.0:
+    # WRITE_DATES_AS_TIMESTAMPS is now a DateTimeFeature, not a
+    # SerializationFeature, so the old key silently stopped binding.
+    datatype:
+      datetime:
+        write-dates-as-timestamps: false
 
 management:
   endpoints:
