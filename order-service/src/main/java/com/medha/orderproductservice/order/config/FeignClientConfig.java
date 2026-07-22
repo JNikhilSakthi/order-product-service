@@ -1,6 +1,5 @@
 package com.medha.orderproductservice.order.config;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import feign.Logger;
 import feign.Retryer;
 import feign.RequestInterceptor;
@@ -8,6 +7,7 @@ import feign.codec.ErrorDecoder;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import tools.jackson.databind.ObjectMapper;
 
 /**
  * Custom behaviour for the {@code ProductClient} Feign client, wired in via

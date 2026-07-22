@@ -1,5 +1,5 @@
 # --- Build stage ---
-FROM eclipse-temurin:21-jdk-jammy AS build
+FROM eclipse-temurin:25-jdk-jammy AS build
 WORKDIR /workspace
 
 COPY pom.xml /workspace/pom.xml
@@ -16,7 +16,7 @@ RUN --mount=type=cache,target=/root/.m2 \
     mvn -q -f /workspace/pom.xml -pl order-service -am -DskipTests package
 
 # --- Run stage ---
-FROM eclipse-temurin:21-jre-jammy
+FROM eclipse-temurin:25-jre-jammy
 WORKDIR /app
 
 RUN apt-get update \

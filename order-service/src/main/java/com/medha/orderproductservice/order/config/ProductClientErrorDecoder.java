@@ -1,6 +1,5 @@
 package com.medha.orderproductservice.order.config;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.medha.orderproductservice.order.exception.InsufficientStockException;
 import com.medha.orderproductservice.order.exception.ProductNotFoundException;
 import com.medha.orderproductservice.order.exception.ProductServiceUnavailableException;
@@ -9,6 +8,7 @@ import feign.Util;
 import feign.codec.ErrorDecoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import tools.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
