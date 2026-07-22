@@ -1,6 +1,5 @@
 package com.medha.orderproductservice.product.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.medha.orderproductservice.product.dto.ProductRequest;
 import com.medha.orderproductservice.product.dto.ProductResponse;
 import com.medha.orderproductservice.product.dto.StockChangeRequest;
@@ -9,10 +8,11 @@ import com.medha.orderproductservice.product.exception.ProductNotFoundException;
 import com.medha.orderproductservice.product.service.ProductService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import tools.jackson.databind.ObjectMapper;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -36,7 +36,7 @@ class ProductControllerTest {
     @Autowired
     private ObjectMapper objectMapper;
 
-    @MockBean
+    @MockitoBean
     private ProductService productService;
 
     private ProductResponse sampleResponse() {
