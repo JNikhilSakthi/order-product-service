@@ -2,9 +2,9 @@
 
 Order Service calling Product Service via **Spring Cloud OpenFeign** — a two-service Maven multi-module monorepo that teaches declarative HTTP clients, custom error decoding, request interceptors, retries and manual saga-style compensation.
 
-![Java](https://img.shields.io/badge/Java-21-orange)
-![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.3.4-brightgreen)
-![Spring Cloud](https://img.shields.io/badge/Spring%20Cloud-2023.0.3-brightgreen)
+![Java](https://img.shields.io/badge/Java-25-orange)
+![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.0.6-brightgreen)
+![Spring Cloud](https://img.shields.io/badge/Spring%20Cloud-2025.1.2-brightgreen)
 ![OpenFeign](https://img.shields.io/badge/OpenFeign-declarative%20HTTP%20client-blue)
 ![MySQL](https://img.shields.io/badge/MySQL-8.4-blue)
 ![Docker Compose](https://img.shields.io/badge/Docker-Compose-2496ED)
@@ -115,7 +115,7 @@ This is the **manual saga / compensation** teaching moment: there is no distribu
 
 ```
 order-product-service/                     (parent POM, packaging=pom)
-├── pom.xml                                 Parent: Spring Boot 3.3.4 + Spring Cloud 2023.0.3 BOMs
+├── pom.xml                                 Parent: Spring Boot 4.0.6 + Spring Cloud 2025.1.2 BOMs
 ├── docker-compose.yml                      MySQL + both services wired together
 ├── mysql-init/
 │   └── 01-init-databases.sql               Creates product_db/order_db + their dedicated users
@@ -196,19 +196,21 @@ There is deliberately no foreign key from `order_items.product_id` into `product
 
 | Layer | Technology | Version |
 |---|---|---|
-| Language | Java | 21 |
-| Framework | Spring Boot | 3.3.4 |
-| Inter-service HTTP client | Spring Cloud OpenFeign | Spring Cloud 2023.0.3 |
+| Language | Java | 25 |
+| Framework | Spring Boot | 4.0.6 |
+| Inter-service HTTP client | Spring Cloud OpenFeign | Spring Cloud 2025.1.2 ("Oakwood" — the first release train compatible with Spring Boot 4.0.x) |
 | Underlying HTTP transport | feign-okhttp | via Spring Cloud BOM |
 | Persistence | Spring Data JPA / Hibernate | via Spring Boot BOM |
 | Database | MySQL | 8.4 |
 | Test DB | H2 (in-memory, MySQL mode) | via Spring Boot BOM |
 | Validation | Jakarta Bean Validation (`spring-boot-starter-validation`) | via Spring Boot BOM |
-| Boilerplate reduction | Lombok | via Spring Boot BOM |
+| Boilerplate reduction | Lombok | 1.18.44 (pinned above Boot's own managed version — the first Lombok release with working JDK 25 annotation-processing support) |
 | HTTP stub server (tests) | WireMock (`wiremock-jre8-standalone`) | 2.35.2 |
 | Build tool | Maven (multi-module reactor) | — |
-| Containerization | Docker / Docker Compose | multi-stage, eclipse-temurin 21 |
+| Containerization | Docker / Docker Compose | multi-stage, eclipse-temurin 25 |
 | Observability | Spring Boot Actuator (`health`, `info`) | via Spring Boot BOM |
+
+> Migrated from Spring Boot 3.3.4 / Spring Cloud 2023.0.3 / Java 21. Notable Boot 4 changes this project had to absorb: JSON moved to Jackson 3 (`tools.jackson.databind.ObjectMapper` instead of `com.fasterxml.jackson.databind.ObjectMapper`) in `FeignClientConfig`/`ProductClientErrorDecoder`; `spring-boot-starter-web` → `spring-boot-starter-webmvc`; `@MockBean`/`@SpyBean` → `@MockitoBean`; `@WebMvcTest`/`@DataJpaTest` moved packages (`org.springframework.boot.webmvc.test.autoconfigure` / `org.springframework.boot.data.jpa.test.autoconfigure`) and now need their own `spring-boot-starter-webmvc-test`/`spring-boot-starter-data-jpa-test` dependencies instead of coming bundled with `spring-boot-starter-test`.
 
 ---
 
@@ -351,7 +353,7 @@ Both swap MySQL for an in-memory H2 database in `MODE=MySQL` (so MySQL-specific 
 
 | Path | Purpose |
 |---|---|
-| `pom.xml` (root) | Parent POM, `packaging=pom`. Imports `spring-boot-dependencies:3.3.4` and `spring-cloud-dependencies:2023.0.3` as BOMs in `<dependencyManagement>` so both modules get consistent, compatible versions without repeating them. Declares `<modules>product-service, order-service</modules>`. |
+| `pom.xml` (root) | Parent POM, `packaging=pom`. Imports `spring-boot-dependencies:4.0.6` and `spring-cloud-dependencies:2025.1.2` as BOMs in `<dependencyManagement>` so both modules get consistent, compatible versions without repeating them. Pins `org.projectlombok:lombok:1.18.44` explicitly ahead of those imports since an imported BOM's own internal version property wins over a same-named property redeclared in this POM. Declares `<modules>product-service, order-service</modules>`. |
 | `docker-compose.yml` | Boots one MySQL 8.4 container plus both service containers on a shared bridge network, with healthchecks gating startup order (`mysql` → `product-service` → `order-service`). |
 | `mysql-init/01-init-databases.sql` | Runs once when the MySQL container's data volume is first created; creates `product_db`/`order_db` and their dedicated, schema-scoped users — mirrors two independently owned microservice databases. |
 | `.gitignore` | Excludes Maven `target/`, IDE metadata, and OS cruft from version control. |
@@ -365,7 +367,7 @@ Both swap MySQL for an in-memory H2 database in `MODE=MySQL` (so MySQL-specific 
 ### Prerequisites
 
 - Docker and Docker Compose
-- (Optional, for local `mvn` runs outside Docker) JDK 21 and Maven 3.9+
+- (Optional, for local `mvn` runs outside Docker) JDK 25 and Maven 3.9+
 
 ### Run everything with Docker Compose
 
@@ -559,7 +561,7 @@ order-service's `GlobalExceptionHandler` maps `ProductNotFoundException` → 422
 
 ## 8. Testing
 
-31 tests total, run via JDK 21 with `mvn clean verify` from the repo root (runs both modules in the reactor).
+31 tests total, run via JDK 25 with `mvn clean verify` from the repo root (runs both modules in the reactor).
 
 ```bash
 mvn clean verify
@@ -587,8 +589,8 @@ The WireMock test is the one a Mockito-mocked `ProductClient` elsewhere in the s
 ### Dockerfiles (`product-service/Dockerfile`, `order-service/Dockerfile`)
 
 Both are identical two-stage builds:
-1. **Build stage** (`eclipse-temurin:21-jdk-jammy`) — copies the root `pom.xml` and both modules' `pom.xml` files first (so `dependency:go-offline` can populate a cached `.m2` layer before any source changes invalidate it), then copies that module's `src/`, then runs `mvn package` for just that module (`-pl <module> -am`) against the reactor.
-2. **Run stage** (`eclipse-temurin:21-jre-jammy`) — installs `curl` (needed for the Compose healthcheck), creates a non-root `spring` user, copies only the built jar from the build stage, and runs it as an unprivileged user.
+1. **Build stage** (`eclipse-temurin:25-jdk-jammy`) — copies the root `pom.xml` and both modules' `pom.xml` files first (so `dependency:go-offline` can populate a cached `.m2` layer before any source changes invalidate it), then copies that module's `src/`, then runs `mvn package` for just that module (`-pl <module> -am`) against the reactor.
+2. **Run stage** (`eclipse-temurin:25-jre-jammy`) — installs `curl` (needed for the Compose healthcheck), creates a non-root `spring` user, copies only the built jar from the build stage, and runs it as an unprivileged user.
 
 `--mount=type=cache,target=/root/.m2` reuses the Maven local repository cache across builds instead of re-downloading dependencies every time.
 
