@@ -23,16 +23,35 @@
     </modules>
 
     <properties>
-        <java.version>21</java.version>
-        <maven.compiler.release>21</maven.compiler.release>
+        <java.version>25</java.version>
+        <maven.compiler.release>25</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <spring-boot.version>3.3.4</spring-boot.version>
-        <spring-cloud.version>2023.0.3</spring-cloud.version>
+        <spring-boot.version>4.0.6</spring-boot.version>
+        <!-- 2025.1.x (aka Oakwood) is the first Spring Cloud release train compatible
+             with Spring Boot 4.0.x (2025.1.0/2025.1.1 fixed the incompatibility that
+             2025.0.0 had with Boot 4.0.1+); pinned to the latest 2025.1.2 patch. -->
+        <spring-cloud.version>2025.1.2</spring-cloud.version>
+        <!-- Boot 4.0.6's managed Lombok is overridden: 1.18.44 is the first release
+             with JDK 25 annotation-processing support (val/@ExtensionMethod javac
+             errors on JDK 25 were fixed in this line; a sibling migration hit this). -->
+        <lombok.version>1.18.44</lombok.version>
     </properties>
 
     <dependencyManagement>
         <dependencies>
+            <!-- Declared ahead of the imported BOMs below and pinned to a literal
+                 version (not just the ${lombok.version} property) on purpose: Maven
+                 resolves an imported BOM's own "${lombok.version}" placeholder using
+                 that BOM's OWN properties (spring-boot-dependencies:4.0.6 pins 1.18.46
+                 internally) before the import is merged, so redefining the property
+                 alone in this POM cannot override it. An explicit entry for the same
+                 groupId:artifactId, listed first, is what actually wins. -->
+            <dependency>
+                <groupId>org.projectlombok</groupId>
+                <artifactId>lombok</artifactId>
+                <version>${lombok.version}</version>
+            </dependency>
             <dependency>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-dependencies</artifactId>
@@ -64,6 +83,20 @@
                     <configuration>
                         <release>${maven.compiler.release}</release>
                         <parameters>true</parameters>
+                        <!-- On JDK 25, javac no longer falls back to -classpath to look
+                             up annotation processors when -processorpath is omitted, so
+                             without this, Lombok is silently never invoked at all (no
+                             generated getters/setters/builders, and no error or warning
+                             either - every Lombok-annotated class just fails to compile
+                             with "cannot find symbol"). Declaring the processor path
+                             explicitly is required now, regardless of Lombok's version. -->
+                        <annotationProcessorPaths>
+                            <path>
+                                <groupId>org.projectlombok</groupId>
+                                <artifactId>lombok</artifactId>
+                                <version>${lombok.version}</version>
+                            </path>
+                        </annotationProcessorPaths>
                     </configuration>
                 </plugin>
             </plugins>
