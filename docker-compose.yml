@@ -1,0 +1,86 @@
+services:
+
+  mysql:
+    image: mysql:8.4
+    container_name: openfeign-demo-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root_pass
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./mysql-init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot_pass"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - openfeign-demo-net
+
+  product-service:
+    build:
+      context: .
+      dockerfile: product-service/Dockerfile
+    container_name: openfeign-demo-product-service
+    restart: unless-stopped
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: product_db
+      DB_USERNAME: product_user
+      DB_PASSWORD: product_pass
+    ports:
+      - "8081:8081"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - openfeign-demo-net
+
+  order-service:
+    build:
+      context: .
+      dockerfile: order-service/Dockerfile
+    container_name: openfeign-demo-order-service
+    restart: unless-stopped
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: order_db
+      DB_USERNAME: order_user
+      DB_PASSWORD: order_pass
+      # Points the OpenFeign client at the product-service container by its
+      # Compose network alias - this is the one setting that makes the two
+      # services find each other inside Docker instead of on localhost.
+      PRODUCT_SERVICE_URL: http://product-service:8081
+    ports:
+      - "8080:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      product-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - openfeign-demo-net
+
+networks:
+  openfeign-demo-net:
+    driver: bridge
+
+volumes:
+  mysql-data:

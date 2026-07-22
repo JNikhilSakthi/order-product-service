@@ -1,0 +1,74 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: order-service
+
+  datasource:
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:order_db}?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+    username: ${DB_USERNAME:order_user}
+    password: ${DB_PASSWORD:order_pass}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      pool-name: order-service-pool
+      maximum-pool-size: 10
+      connection-timeout: 10000
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+        format_sql: true
+    show-sql: false
+
+  jackson:
+    default-property-inclusion: non_null
+    serialization:
+      write-dates-as-timestamps: false
+
+# Base URL of product-service. Defaults to localhost for running the two
+# services side by side on a laptop; docker-compose.yml overrides this to the
+# compose service name (http://product-service:8081) via PRODUCT_SERVICE_URL.
+product-service:
+  url: ${PRODUCT_SERVICE_URL:http://localhost:8081}
+  retry:
+    period-ms: 100
+    max-period-ms: 1000
+    max-attempts: 3
+
+feign:
+  okhttp:
+    enabled: true
+  httpclient:
+    enabled: false
+  client:
+    config:
+      default:
+        connectTimeout: 3000
+        readTimeout: 5000
+        loggingLevel: full
+      product-service:
+        connectTimeout: 2000
+        readTimeout: 4000
+        loggingLevel: full
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: when-authorized
+
+logging:
+  level:
+    root: INFO
+    com.medha.orderproductservice.order: INFO
+    # DEBUG unlocks Feign's own request/response logging at the level
+    # configured by the feignLoggerLevel bean (FULL) in FeignClientConfig.
+    com.medha.orderproductservice.order.client.ProductClient: DEBUG
